@@ -11,6 +11,9 @@ lmd:
   contrastive: 0.1
 
 lr: 1e-4
-temperature: 0.1
-threshold_selfsim: 0.80
 threshold_selfsim_metrics: 0.95
+
+contrastive_loss:
+  _target_: src.model.losses.InfoNCE_with_filtering
+  temperature: 0.1
+  threshold_selfsim: 0.80

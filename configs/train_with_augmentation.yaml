@@ -1,0 +1,14 @@
+run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_augmented_${hydra:runtime.choices.data/motion_loader}
+
+defaults:
+  - data: hml3d_kitml
+  - model: tmr_text_averaging
+  - trainer
+  - train
+  - _self_
+
+data:
+  defaults:
+    - motion_loader: guoh3dfeats # TODO
+    - _base_augmented
+    - _self_

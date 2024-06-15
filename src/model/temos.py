@@ -125,7 +125,7 @@ class TEMOS(LightningModule):
                 latent_vectors = mu + fact * eps * std
         else:
             dists = None
-            (latent_vectors,) = encoded.unbind(1)
+            (latent_vectors, _) = encoded.unbind(1)
 
         if return_distribution:
             return latent_vectors, dists
@@ -161,22 +161,32 @@ class TEMOS(LightningModule):
         motions = self.decode(latent_vectors, lengths, mask)
 
         if return_all:
-            return motions, latent_vectors, distributions
+            return {"motions": motions,
+                    "latent_vectors": latent_vectors,
+                    "distributions": distributions}
 
-        return motions
+        return {"motions": motions}
 
-    def compute_loss(self, batch: Dict) -> Dict:
+    def call_models(self, batch):
         text_x_dict = batch["text_x_dict"]
         motion_x_dict = batch["motion_x_dict"]
 
         mask = motion_x_dict["mask"]
-        ref_motions = motion_x_dict["x"]
 
         # text -> motion
-        t_motions, t_latents, t_dists = self(text_x_dict, mask=mask, return_all=True)
+        t_results = self(text_x_dict, mask=mask, return_all=True)
 
         # motion -> motion
-        m_motions, m_latents, m_dists = self(motion_x_dict, mask=mask, return_all=True)
+        m_results = self(motion_x_dict, mask=mask, return_all=True)
+
+        return t_results, m_results
+
+    def compute_loss(self, batch: Dict) -> Dict:
+        t_results, m_results = self.call_models(batch)
+        t_motions, t_latents, t_dists = t_results["motions"], t_results["latent_vectors"], t_results["distributions"]
+        m_motions, m_latents, m_dists = m_results["motions"], m_results["latent_vectors"], m_results["distributions"]
+
+        ref_motions = batch["motion_x_dict"]["x"]
 
         # Store all losses
         losses = {}

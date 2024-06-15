@@ -1,5 +1,6 @@
 ckpt: last
 resume_dir: null
+ckpt_path: null
 
 run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_${hydra:runtime.choices.data/motion_loader}
 
@@ -10,6 +11,7 @@ dataloader:
 
 defaults:
   - data: humanml3d
+  - data_val: null
   - model: tmr
   - trainer
   - defaults

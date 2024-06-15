@@ -32,6 +32,7 @@ requests==2.31.0
 scipy==1.11.2
 sympy==1.11.1
 torchmetrics==1.1.2
+transformers==4.41.2
 tqdm==4.66.1
 triton==2.0.0
 typing_extensions==4.4.0
