@@ -42,16 +42,13 @@ class AugmentedTextMotionDataset(TextMotionDataset):
         if split=="train" and paraphrase_filename is not None:
             self.annotations_paraphrased = load_annotations(path, name=paraphrase_filename)
             self.paraphrase_prob = paraphrase_prob
-        logging.info(f"self.paraphrase_prob : {self.paraphrase_prob}")
         self.summary_prob = 0
         if split=="train" and summary_filename is not None:
             self.annotations_summary = load_annotations(path, name=summary_filename)
             self.summary_prob = summary_prob
-        logging.info(f"self.summary_prob : {self.summary_prob}")
         self.averaging_prob = 0
         if split=="train" and paraphrase_filename is not None:
             self.averaging_prob = averaging_prob
-        logging.info(f"self.averaging_prob : {self.averaging_prob}")
 
         # filter annotations (min/max)
         # but not for the test set

@@ -2,13 +2,24 @@ run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_au
 
 defaults:
   - data: hml3d_kitml
-  - model: tmr_text_averaging
-  - trainer
+  -  data_val: null
   - train
+  - override model: tmr_text_averaging
   - _self_
 
 data:
-  defaults:
-    - motion_loader: guoh3dfeats # TODO
-    - _base_augmented
-    - _self_
+  _target_: src.data.augmented_text_motion.AugmentedTextMotionDataset
+  paraphrase_filename: annotations_paraphrased.json
+  summary_filename: annotations_summarized.json
+  paraphrase_prob: 0.2
+  summary_prob: 0.1
+  averaging_prob: 0.3
+  preload: True
+  text_sampling_nbr: null
+  
+  text_to_token_emb:
+    name: token_embeddings_all
+
+  text_to_sent_emb:
+    name: sent_embeddings_all
+

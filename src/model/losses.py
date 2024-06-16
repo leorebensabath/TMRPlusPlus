@@ -19,7 +19,7 @@ class KLLoss:
         return "KLLoss()"
 
 
-def get_sim_matrix(self, x, y):
+def get_sim_matrix(x, y):
     x_logits = torch.nn.functional.normalize(x, dim=-1)
     y_logits = torch.nn.functional.normalize(y, dim=-1)
     sim_matrix = x_logits @ y_logits.T
@@ -44,7 +44,7 @@ class InfoNCE_with_filtering:
 
     def __call__(self, x, y, sent_emb=None):
         bs, device = len(x), x.device
-        sim_matrix = self.get_sim_matrix(x, y) / self.temperature
+        sim_matrix = get_sim_matrix(x, y) / self.temperature
 
         if sent_emb is not None and self.threshold_selfsim:
             sim_matrix = self.filter_sim_mat_with_sent_emb(sim_matrix, sent_emb)
@@ -83,7 +83,7 @@ class HN_InfoNCE_with_filtering(InfoNCE_with_filtering):
 
     def __call__(self, x, y, sent_emb=None):
         bs, device = len(x), x.device
-        sim_matrix = self.get_sim_matrix(x, y) / self.temperature
+        sim_matrix = get_sim_matrix(x, y) / self.temperature
 
         if sent_emb is not None and self.threshold_selfsim:
             sim_matrix = self.filter_sim_mat_with_sent_emb(sim_matrix, sent_emb)
