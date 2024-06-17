@@ -9,8 +9,8 @@ defaults:
 
 data:
   _target_: src.data.augmented_text_motion.AugmentedTextMotionDataset
-  paraphrase_filename: annotations_paraphrased.json
-  summary_filename: annotations_summarized.json
+  paraphrase_filename: annotations_paraphrases.json
+  summary_filename: annotations_actions.json
   paraphrase_prob: 0.2
   summary_prob: 0.1
   averaging_prob: 0.3
