@@ -1,13 +1,21 @@
 import numpy as np
+import logging
 
+def print_latex_metrics(metrics, ranks=[1, 2, 3, 5, 10], t2m=True, m2t=True, MedR=True):
+    vals = [str(x).zfill(2) for x in ranks]
+    t2m_keys = [f"t2m/R{i}" for i in vals]
+    if MedR:
+        t2m_keys += ["t2m/MedR"]
+    m2t_keys = [f"m2t/R{i}" for i in vals]
+    if MedR:
+        m2t_keys += ["m2t/MedR"]
 
-def print_latex_metrics(metrics):
-    vals = [str(x).zfill(2) for x in [1, 2, 3, 5, 10]]
-    t2m_keys = [f"t2m/R{i}" for i in vals] + ["t2m/MedR"]
-    m2t_keys = [f"m2t/R{i}" for i in vals] + ["m2t/MedR"]
-
-    keys = t2m_keys + m2t_keys
-
+    keys = []
+    if t2m:
+        keys += t2m_keys
+    if m2t:
+        keys += m2t_keys
+    
     def ff(val_):
         val = str(val_).ljust(5, "0")
         # make decimal fine when only one digit
@@ -18,32 +26,62 @@ def print_latex_metrics(metrics):
     str_ = "& " + " & ".join([ff(metrics[key]) for key in keys]) + r" \\"
     dico = {key: ff(metrics[key]) for key in keys}
     print(dico)
-    print("Number of samples: {}".format(int(metrics["t2m/len"])))
+    if "t2m/len" in metrics:
+        print("Number of samples: {}".format(int(metrics["t2m/len"])))
+    else:
+        print("Number of samples: {}".format(int(metrics["m2t/len"])))
+    print(str_)
+
+    ### Norm part for action recognition
+
+    norm_keys = []
+    for key in keys:
+        if f"{key}_norm" in metrics:
+            norm_keys.append(f"{key}_norm")
+
+    str_ = "& " + " & ".join([ff(metrics[key]) for key in norm_keys]) + r" \\"
+    dico = {key: ff(metrics[key]) for key in norm_keys}
+    print(dico)
     print(str_)
 
 
 def all_contrastive_metrics(
-    sims, emb=None, threshold=None, rounding=2, return_cols=False
+    sims, emb=None, threshold=None, rounding=2, return_cols=False, m2t=True, t2m=True
 ):
+    if not t2m and not m2t:
+        logging.warning("No metrics asked to be computed")
+        return None
+    
     text_selfsim = None
     if emb is not None:
         text_selfsim = emb @ emb.T
 
-    t2m_m, t2m_cols = contrastive_metrics(
-        sims, text_selfsim, threshold, return_cols=True, rounding=rounding
-    )
-    m2t_m, m2t_cols = contrastive_metrics(
-        sims.T, text_selfsim, threshold, return_cols=True, rounding=rounding
-    )
+    if t2m:
+        t2m_m, t2m_cols = contrastive_metrics(
+            sims, text_selfsim, threshold, return_cols=True, rounding=rounding
+        )
+    if m2t:
+        m2t_m, m2t_cols = contrastive_metrics(
+            sims.T, text_selfsim, threshold, return_cols=True, rounding=rounding
+        )
 
     all_m = {}
-    for key in t2m_m:
-        all_m[f"t2m/{key}"] = t2m_m[key]
-        all_m[f"m2t/{key}"] = m2t_m[key]
+    if t2m:
+        keys = t2m_m.keys()
+    else:
+        keys = m2t_m.keys()
+    for key in keys:
+        if t2m:
+            all_m[f"t2m/{key}"] = t2m_m[key]
+        if m2t:
+            all_m[f"m2t/{key}"] = m2t_m[key]
 
     all_m["t2m/len"] = float(len(sims))
-    all_m["m2t/len"] = float(len(sims[0]))
+    if m2t:
+        all_m["m2t/len"] = float(len(sims[0]))
     if return_cols:
+        if not m2t:
+            m2t_cols = None
         return all_m, t2m_cols, m2t_cols
     return all_m
 
@@ -54,8 +92,8 @@ def contrastive_metrics(
     threshold=None,
     return_cols=False,
     rounding=2,
-    break_ties="averaging",
-):
+    break_ties="optimistically",
+):  
     n, m = sims.shape
     assert n == m
     num_queries = n
@@ -64,10 +102,10 @@ def contrastive_metrics(
     sorted_dists = np.sort(dists, axis=1)
     # GT is in the diagonal
     gt_dists = np.diag(dists)[:, None]
-
+    
     if text_selfsim is not None and threshold is not None:
         real_threshold = 2 * threshold - 1
-        idx = np.argwhere(text_selfsim > real_threshold)
+        idx = np.argwhere(text_selfsim >= real_threshold)
         partition = np.unique(idx[:, 0], return_index=True)[1]
         # take as GT the minimum score of similar values
         gt_dists = np.minimum.reduceat(dists[tuple(idx.T)], partition)
@@ -117,9 +155,12 @@ def break_ties_optimistically(sorted_dists, gt_dists):
     return cols
 
 
-def cols2metrics(cols, num_queries, rounding=2):
+def cols2metrics(cols, num_queries=None, rounding=2):
     metrics = {}
     vals = [str(x).zfill(2) for x in [1, 2, 3, 5, 10]]
+
+    if num_queries is None:
+        num_queries = len(cols)
     for val in vals:
         metrics[f"R{val}"] = 100 * float(np.sum(cols < int(val))) / num_queries
 
@@ -129,3 +170,157 @@ def cols2metrics(cols, num_queries, rounding=2):
         for key in metrics:
             metrics[key] = round(metrics[key], rounding)
     return metrics
+
+
+def contrastive_metrics_m2t_action_retrieval(
+    sims,
+    motion_cat_idx,
+    return_cols=False,
+    rounding=2,
+    break_ties="averaging", 
+    norm_metrics=True
+):  
+    n, m = sims.shape
+    num_queries = n
+
+    dists = -sims
+    sorted_dists = np.sort(dists, axis=1)
+    # GT is in the diagonal
+    gt_dists = dists[range(n), motion_cat_idx]
+    gt_dists = gt_dists[:, None]
+
+    rows, cols = np.where((sorted_dists - gt_dists) == 0)  # find column position of GT
+
+    if rows.size > num_queries:
+        assert np.unique(rows).size == num_queries, "issue in metric evaluation"
+        if break_ties == "optimistically":
+            opti_cols = break_ties_optimistically(sorted_dists, gt_dists)
+            cols = opti_cols
+        elif break_ties == "averaging":
+            avg_cols = break_ties_average(sorted_dists, gt_dists)
+            cols = avg_cols
+
+    msg = "expected ranks to match queries ({} vs {}) "
+    assert cols.size == num_queries, msg
+
+    if norm_metrics:
+        motion_cat_idx = np.array(motion_cat_idx)
+        cat_metrics = []
+        for i in range(np.max(motion_cat_idx) + 1):
+            cols_cat = cols[motion_cat_idx==i]
+            cat_metrics.append(cols2metrics(cols_cat, rounding=rounding))
+        
+        print("len(cat_metrics) : ", len(cat_metrics))
+
+        metrics_norm = {}
+        keys = cat_metrics[0].keys()
+        for k in keys:
+            metrics_norm[f"{k}_norm"] = round(np.mean([elt[k] for elt in cat_metrics]), 2)
+
+    metrics = cols2metrics(cols, num_queries, rounding=rounding)
+
+    if norm_metrics:
+        metrics.update(metrics_norm)
+
+    if return_cols:
+        return metrics, cols
+    return metrics
+
+
+def all_contrastive_metrics_action_retrieval(
+    sims, motion_cat_idx, rounding=2, return_cols=False, norm_metrics=True
+):
+        
+    m2t_m, m2t_cols = contrastive_metrics_m2t_action_retrieval(
+        sims.T, motion_cat_idx, return_cols=True, rounding=rounding, norm_metrics=norm_metrics
+    )
+
+    all_m = {}
+    keys = m2t_m.keys()
+    for key in keys:
+        all_m[f"m2t/{key}"] = m2t_m[key]
+
+    all_m["m2t/len"] = float(len(sims[0]))
+    if return_cols:
+        return all_m, m2t_cols
+    return all_m
+
+##################################################
+def contrastive_metrics_ensemble(
+    sims,
+    text_ensemble_indices,
+    text_selfsim=None,
+    threshold=None,
+    return_cols=False,
+    rounding=2,
+    break_ties="optimistically",
+):  
+    n, m = sims.shape
+    num_queries = n
+
+    dists = -sims
+
+    sorted_indices = np.argsort(dists, axis=1)
+    ranks_all = np.empty_like(sorted_indices, dtype=float)
+    ranks_all[np.arange(dists.shape[0])[:, None], sorted_indices] = np.arange(1, dists.shape[1] + 1)
+    
+    ranks = np.empty((m, m), dtype=float)
+    for i in range(len(text_ensemble_indices)):
+        start, end = text_ensemble_indices[i]
+        ranks[i] = np.sum(ranks_all[start:end], axis=0)
+
+    gt_dists = np.diag(ranks)[:, None]
+    print("gt_dists : ", gt_dists)
+    sorted_dists = np.sort(ranks, axis=1)
+    print("sorted_dists : ", sorted_dists)
+    # GT is in the diagonal
+    
+    if text_selfsim is not None and threshold is not None:
+        real_threshold = 2 * threshold - 1
+        idx = np.argwhere(text_selfsim >= real_threshold)
+        partition = np.unique(idx[:, 0], return_index=True)[1]
+        # take as GT the minimum score of similar values
+        gt_dists = np.minimum.reduceat(dists[tuple(idx.T)], partition)
+        gt_dists = gt_dists[:, None]
+
+    rows, cols = np.where((sorted_dists - gt_dists) == 0)  # find column position of GT
+
+    # if there are ties
+    if rows.size > num_queries:
+        assert np.unique(rows).size == num_queries, "issue in metric evaluation"
+        if break_ties == "optimistically":
+            opti_cols = break_ties_optimistically(sorted_dists, gt_dists)
+            cols = opti_cols
+        elif break_ties == "averaging":
+            avg_cols = break_ties_average(sorted_dists, gt_dists)
+            cols = avg_cols
+
+    msg = "expected ranks to match queries ({} vs {}) "
+    assert cols.size == num_queries, msg
+
+    if return_cols:
+        return cols2metrics(cols, num_queries, rounding=rounding), cols
+    return cols2metrics(cols, num_queries, rounding=rounding)
+
+def all_contrastive_metrics_ensemble(
+    sims, text_ensemble_indices, emb=None, threshold=None, rounding=2, return_cols=False
+):    
+    text_selfsim = None
+    if emb is not None:
+        text_selfsim = emb @ emb.T
+
+    t2m_m, t2m_cols = contrastive_metrics_ensemble(
+        sims, text_ensemble_indices, text_selfsim, threshold, return_cols=True, rounding=rounding
+    )
+
+    all_m = {}
+    keys = t2m_m.keys()
+    for key in keys:
+        all_m[f"t2m/{key}"] = t2m_m[key]
+
+    all_m["t2m/len"] = float(len(sims))
+
+    if return_cols:
+        return all_m, t2m_cols, None
+    return all_m
+

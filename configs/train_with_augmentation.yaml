@@ -1,4 +1,4 @@
-run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_augmented_${hydra:runtime.choices.data/motion_loader}
+run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_${hydra:runtime.choices.data/motion_loader}
 
 defaults:
   - data: hml3d_kitml
