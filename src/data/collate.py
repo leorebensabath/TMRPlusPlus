@@ -57,3 +57,29 @@ def collate_text_motion(lst_elements: List, *, device: Optional[str] = None) -> 
     for key in x_dict_keys:
         batch[key] = collate_x_dict([x[key] for x in lst_elements], device=device)
     return batch
+
+
+def collate_augmented_text_motion(lst_elements: List, *, device: Optional[str] = None):
+    other_keys = ['keyid', 'sent_emb']
+
+    batch = {key: default_collate([x[key] for x in lst_elements]) for key in other_keys}
+    batch["text"] = [elt["text"] for elt in lst_elements]
+
+    for key, val in batch.items():
+        if isinstance(val, torch.Tensor) and device is not None:
+            batch[key] = val.to(device)
+
+    batch["motion_x_dict"] = collate_x_dict([x["motion_x_dict"] for x in lst_elements], device=device)
+
+    batch["text_slices"] = []
+    current_index = 0
+    for elt in lst_elements:
+        batch["text_slices"].append((current_index, current_index + len(elt["text"])))
+        current_index += len(elt["text"])
+
+    texts_concat = [x_dict for x in lst_elements for x_dict in x["text_x_dict"]]
+    batch["text_x_dict"] = collate_x_dict(
+        texts_concat,
+        device=device
+    )
+    return batch

@@ -31,7 +31,7 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
         latent_texts = []
         latent_motions = []
         sent_embs = []
-        for data in tqdm(all_data_splitted, leave=False):
+        for data in tqdm(all_data_splitted, leave=True):
             batch = collate_text_motion(data, device=device)
 
             # Text is already encoded
@@ -57,7 +57,6 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
     }
     return returned
 
-
 @hydra.main(version_base=None, config_path="configs", config_name="retrieval")
 def retrieval(newcfg: DictConfig) -> None:
     protocol = newcfg.protocol
@@ -66,15 +65,19 @@ def retrieval(newcfg: DictConfig) -> None:
     run_dir = newcfg.run_dir
     ckpt_name = newcfg.ckpt
     batch_size = newcfg.batch_size
+    save_file_name = newcfg.save_file_name
+    split = newcfg.split
 
-    assert protocol in ["all", "normal", "threshold", "nsim", "guo"]
+    print("protocol : ", protocol)
+    assert protocol in ["all", "normal", "threshold", "nsim", "guo", "normal_no_mirror", "threshold_no_mirror"]
+    assert split == "test" or (protocol != "nsim" and protocol != "all")
 
     if protocol == "all":
         protocols = ["normal", "threshold", "nsim", "guo"]
     else:
         protocols = [protocol]
 
-    save_dir = os.path.join(run_dir, "contrastive_metrics")
+    save_dir = os.path.join(run_dir, save_file_name)
     os.makedirs(save_dir, exist_ok=True)
 
     # Load last config
@@ -94,18 +97,25 @@ def retrieval(newcfg: DictConfig) -> None:
     logger.info("Loading the model")
     model = load_model_from_cfg(cfg, ckpt_name, eval_mode=True, device=device)
 
+
+    data = newcfg.data
+    if data is None:
+        data = cfg.data
+
     datasets = {}
     results = {}
     for protocol in protocols:
         # Load the dataset if not already
         if protocol not in datasets:
             if protocol in ["normal", "threshold", "guo"]:
-                dataset = instantiate(cfg.data, split="test")
+                dataset = instantiate(data, split=split)
                 datasets.update(
                     {key: dataset for key in ["normal", "threshold", "guo"]}
                 )
+            elif protocol in ["normal_no_mirror", "threshold_no_mirror"]:
+                datasets[protocol] = instantiate(data, split=split + "_no_mirror")
             elif protocol == "nsim":
-                datasets[protocol] = instantiate(cfg.data, split="nsim_test")
+                datasets[protocol] = instantiate(data, split="nsim_test")
         dataset = datasets[protocol]
 
         # Compute sim_matrix for each protocol
@@ -115,6 +125,11 @@ def retrieval(newcfg: DictConfig) -> None:
                     model, dataset, dataset.keyids, batch_size=batch_size
                 )
                 results.update({key: res for key in ["normal", "threshold"]})
+            elif protocol in ["normal_no_mirror", "threshold_no_mirror"]:
+                res = compute_sim_matrix(
+                    model, dataset, dataset.keyids, batch_size=batch_size
+                )
+                results[protocol] = res
             elif protocol == "nsim":
                 res = compute_sim_matrix(
                     model, dataset, dataset.keyids, batch_size=batch_size
@@ -171,10 +186,11 @@ def retrieval(newcfg: DictConfig) -> None:
                 protocol_name = protocol + f"_{threshold}"
             else:
                 emb, threshold = None, None
-            metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold)
+            metrics = all_contrastive_metrics(sim_matrix, emb, threshold=threshold, t2m=True, m2t=False)
 
-        print_latex_metrics(metrics)
-
+        print_latex_metrics(metrics, ranks=[1, 3, 10], t2m=True, m2t=False, MedR=False)
+        
+        print("protocol_name : ", protocol_name)
         metric_name = f"{protocol_name}.yaml"
         path = os.path.join(save_dir, metric_name)
         save_metric(path, metrics)

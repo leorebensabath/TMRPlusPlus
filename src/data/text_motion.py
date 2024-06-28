@@ -61,7 +61,7 @@ class TextMotionDataset(Dataset):
         if "test" not in split:
             self.annotations = self.filter_annotations(self.annotations)
 
-        self.is_training = split == "train"
+        self.is_training = "train" in split
         self.keyids = [keyid for keyid in self.keyids if keyid in self.annotations]
         self.nfeats = self.motion_loader.nfeats
 

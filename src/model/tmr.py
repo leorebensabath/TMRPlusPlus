@@ -53,12 +53,11 @@ class TMR(TEMOS):
         text_encoder: nn.Module,
         motion_decoder: nn.Module,
         vae: bool,
+        contrastive_loss: InfoNCE_with_filtering,
         fact: Optional[float] = None,
         sample_mean: Optional[bool] = False,
         lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1},
         lr: float = 1e-4,
-        temperature: float = 0.7,
-        threshold_selfsim: float = 0.80,
         threshold_selfsim_metrics: float = 0.95,
     ) -> None:
         # Initialize module like TEMOS
@@ -74,9 +73,7 @@ class TMR(TEMOS):
         )
 
         # adding the contrastive loss
-        self.contrastive_loss_fn = InfoNCE_with_filtering(
-            temperature=temperature, threshold_selfsim=threshold_selfsim
-        )
+        self.contrastive_loss_fn = contrastive_loss
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
         # store validation values to compute retrieval metrics
@@ -86,20 +83,14 @@ class TMR(TEMOS):
         self.validation_step_sent_emb = []
 
     def compute_loss(self, batch: Dict, return_all=False) -> Dict:
-        text_x_dict = batch["text_x_dict"]
-        motion_x_dict = batch["motion_x_dict"]
+        t_results, m_results = self.call_models(batch)
+        t_motions, t_latents, t_dists = t_results["motions"], t_results["latent_vectors"], t_results["distributions"]
+        m_motions, m_latents, m_dists = m_results["motions"], m_results["latent_vectors"], m_results["distributions"]
 
-        mask = motion_x_dict["mask"]
-        ref_motions = motion_x_dict["x"]
+        ref_motions = batch["motion_x_dict"]["x"]
 
         # sentence embeddings
         sent_emb = batch["sent_emb"]
-
-        # text -> motion
-        t_motions, t_latents, t_dists = self(text_x_dict, mask=mask, return_all=True)
-
-        # motion -> motion
-        m_motions, m_latents, m_dists = self(motion_x_dict, mask=mask, return_all=True)
 
         # Store all losses
         losses = {}
