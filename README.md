@@ -1,6 +1,6 @@
 <div align="center">
 
-# TMRPlusPlus
+# TMR++
 ## A Cross-Dataset Study for Text-based 3D Human Motion Retrieval
 
 <a href=""><strong>Léore Bensabath</strong></a>
