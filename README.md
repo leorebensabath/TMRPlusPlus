@@ -1,18 +1,16 @@
 <div align="center">
 
-# TMR: Text-to-Motion Retrieval
-## Using Contrastive 3D Human Motion Synthesis
+# TMRPlusPlus
+## A Cross-Dataset Study for Text-based 3D Human Motion Retrieval
 
-<a href="https://mathis.petrovich.fr"><strong>Mathis Petrovich</strong></a>
+<a href=""><strong>Léore Bensabath</strong></a>
 ·
-<a href="https://ps.is.mpg.de/~black"><strong>Michael J. Black</strong></a>
+<a href="https://mathis.petrovich.fr"><strong>Mathis Petrovich</strong></a>
 ·
 <a href="https://imagine.enpc.fr/~varolg"><strong>G&#252;l Varol</strong></a>
 
 
-[![ICCV2023](https://img.shields.io/badge/ICCV-2023-9065CA.svg?logo=ICCV)](https://iccv2023.thecvf.com)
-[![arXiv](https://img.shields.io/badge/arXiv-TMR-A10717.svg?logo=arXiv)](https://arxiv.org/abs/2305.00976)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)]()
+[![arXiv](https://img.shields.io/badge/arXiv-TMR-A10717.svg?logo=arXiv)](https://arxiv.org/abs/2405.16909)
 
 </div>
 
