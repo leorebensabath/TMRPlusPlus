@@ -59,7 +59,7 @@ def collate_text_motion(lst_elements: List, *, device: Optional[str] = None) -> 
     return batch
 
 
-def collate_augmented_text_motion(lst_elements: List, *, device: Optional[str] = None):
+def collate_text_motion_multiple_texts(lst_elements: List, *, device: Optional[str] = None):
     other_keys = ['keyid', 'sent_emb']
 
     batch = {key: default_collate([x[key] for x in lst_elements]) for key in other_keys}

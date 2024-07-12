@@ -245,47 +245,27 @@ def all_contrastive_metrics_action_retrieval(
         return all_m, m2t_cols
     return all_m
 
-##################################################
-def contrastive_metrics_ensemble(
+
+def contrastive_metrics_m2t_action_retrieval_multi_labels(
     sims,
-    text_ensemble_indices,
-    text_selfsim=None,
-    threshold=None,
+    motion_cat_idx,
     return_cols=False,
     rounding=2,
-    break_ties="optimistically",
-):  
+    break_ties="averaging",
+    norm_metrics=True
+):
     n, m = sims.shape
     num_queries = n
 
     dists = -sims
+    sorted_dists = np.sort(dists, axis=1)
 
-    sorted_indices = np.argsort(dists, axis=1)
-    ranks_all = np.empty_like(sorted_indices, dtype=float)
-    ranks_all[np.arange(dists.shape[0])[:, None], sorted_indices] = np.arange(1, dists.shape[1] + 1)
-    
-    ranks = np.empty((m, m), dtype=float)
-    for i in range(len(text_ensemble_indices)):
-        start, end = text_ensemble_indices[i]
-        ranks[i] = np.sum(ranks_all[start:end], axis=0)
-
-    gt_dists = np.diag(ranks)[:, None]
-    print("gt_dists : ", gt_dists)
-    sorted_dists = np.sort(ranks, axis=1)
-    print("sorted_dists : ", sorted_dists)
-    # GT is in the diagonal
-    
-    if text_selfsim is not None and threshold is not None:
-        real_threshold = 2 * threshold - 1
-        idx = np.argwhere(text_selfsim >= real_threshold)
-        partition = np.unique(idx[:, 0], return_index=True)[1]
-        # take as GT the minimum score of similar values
-        gt_dists = np.minimum.reduceat(dists[tuple(idx.T)], partition)
-        gt_dists = gt_dists[:, None]
+    motion_cat_idx = [cat_idx[np.argmin([dists[i, elt] for elt in cat_idx])] for i, cat_idx in enumerate(motion_cat_idx)]
+    gt_dists = dists[range(n), motion_cat_idx]
+    gt_dists = gt_dists[:, None]
 
     rows, cols = np.where((sorted_dists - gt_dists) == 0)  # find column position of GT
 
-    # if there are ties
     if rows.size > num_queries:
         assert np.unique(rows).size == num_queries, "issue in metric evaluation"
         if break_ties == "optimistically":
@@ -298,29 +278,46 @@ def contrastive_metrics_ensemble(
     msg = "expected ranks to match queries ({} vs {}) "
     assert cols.size == num_queries, msg
 
+    if norm_metrics:
+        motion_cat_idx = np.array(motion_cat_idx)
+        cat_metrics = []
+        for i in range(np.max(motion_cat_idx) + 1):
+            cols_cat = cols[motion_cat_idx==i]
+            if len(cols_cat) > 0:
+                cat_metrics.append(cols2metrics(cols_cat, rounding=rounding))
+
+        print("len(cat_metrics) : ", len(cat_metrics))
+
+        metrics_norm = {}
+        keys = cat_metrics[0].keys()
+        for k in keys:
+            metrics_norm[f"{k}_norm"] = round(float(np.mean([elt[k] for elt in cat_metrics])), 2)
+
+    metrics = cols2metrics(cols, num_queries, rounding=rounding)
+
+    if norm_metrics:
+        metrics.update(metrics_norm)
+
     if return_cols:
-        return cols2metrics(cols, num_queries, rounding=rounding), cols
-    return cols2metrics(cols, num_queries, rounding=rounding)
+        return metrics, cols
+    return metrics
 
-def all_contrastive_metrics_ensemble(
-    sims, text_ensemble_indices, emb=None, threshold=None, rounding=2, return_cols=False
-):    
-    text_selfsim = None
-    if emb is not None:
-        text_selfsim = emb @ emb.T
 
-    t2m_m, t2m_cols = contrastive_metrics_ensemble(
-        sims, text_ensemble_indices, text_selfsim, threshold, return_cols=True, rounding=rounding
+def all_contrastive_metrics_action_retrieval_multi_labels(
+    sims, motion_cat_idx, rounding=2, return_cols=False, norm_metrics=True
+):
+
+    m2t_m, m2t_cols = contrastive_metrics_m2t_action_retrieval_multi_labels(
+        sims.T, motion_cat_idx, return_cols=True, rounding=rounding, norm_metrics=norm_metrics
     )
 
     all_m = {}
-    keys = t2m_m.keys()
+    keys = m2t_m.keys()
     for key in keys:
-        all_m[f"t2m/{key}"] = t2m_m[key]
+        all_m[f"m2t/{key}"] = m2t_m[key]
 
-    all_m["t2m/len"] = float(len(sims))
-
+    all_m["m2t/len"] = float(len(sims[0]))
     if return_cols:
-        return all_m, t2m_cols, None
+        return all_m, m2t_cols
     return all_m
 

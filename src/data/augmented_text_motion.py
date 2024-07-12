@@ -5,7 +5,7 @@ import random
 import torch
 from tqdm import tqdm
 
-from .collate import collate_augmented_text_motion
+from .collate import collate_text_motion_multiple_texts
 from .text_motion import load_annotations, TextMotionDataset
 
 
@@ -32,7 +32,7 @@ class AugmentedTextMotionDataset(TextMotionDataset):
                          split=split, min_seconds=min_seconds, max_seconds=max_seconds,
                          preload=False, tiny=tiny)
 
-        self.collate_fn = collate_augmented_text_motion
+        self.collate_fn = collate_text_motion_multiple_texts
 
         assert paraphrase_prob == 0 or paraphrase_filename is not None
         assert summary_prob == 0 or summary_filename is not None

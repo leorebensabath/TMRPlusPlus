@@ -238,6 +238,7 @@ def save_sent_embeddings(
     path, annotations_filename="annotations.json", output_folder_name=None,
     modelname="sentence-transformers/all-mpnet-base-v2", modelpath=None, device="cuda"
 ):
+    # Provide modelpath as a path to the local folder of the model if you can't access internet during training
     if modelpath is None:
         modelpath = modelname
     model = TextToEmb(modelpath, mean_pooling=True, device=device)

@@ -1,5 +1,4 @@
 import sys
-sys.path.append("/home/leoreb/TMR")
 import logging
 import hydra
 from omegaconf import DictConfig

@@ -5,7 +5,7 @@ import torch
 from .tmr import TMR
 
 class TMRTextAveraging(TMR):
-    """Compatible with AugmentedTextMotionDataset Dataset object and collate_augmented_text_motion collate function."""
+    """Compatible with AugmentedTextMotionDataset Dataset object and collate_text_motion_multiple_texts collate function."""
 
     # Forward: X => motions
     def forward(

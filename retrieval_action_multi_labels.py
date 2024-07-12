@@ -17,7 +17,7 @@ def save_metric(path, metrics):
 def compute_sim_matrix(model, dataset, keyids, batch_size=256):
     import torch
     import numpy as np
-    from src.data.collate import collate_text_motion_text_ensemble
+    from src.data.collate import collate_text_motion_multiple_texts
     from src.model.tmr import get_sim_matrix
 
     device = model.device
@@ -37,7 +37,7 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
         #for data in tqdm(all_data_splitted, leave=True):
         for data in all_data_splitted:
 
-            batch = collate_text_motion_text_ensemble(data, device=device)
+            batch = collate_text_motion_multiple_texts(data, device=device)
             # Text is already encoded
             text_x_dict = batch["text_x_dict"]
             motion_x_dict = batch["motion_x_dict"]
@@ -50,7 +50,7 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
             latent_texts.append(latent_text)
             latent_motions.append(latent_motion)
             sent_embs.append(sent_emb)
-            idx = batch["text_ensemble_indices"]
+            idx = batch["text_slices"]
             idx = [[elt[0] + indices_shift, elt[1] + indices_shift] for elt in idx]
             text_indices.extend(idx)
             indices_shift += len(latent_text)
