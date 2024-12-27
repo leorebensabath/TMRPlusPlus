@@ -19,7 +19,7 @@
 Official PyTorch implementation of the paper:
 <div align="center">
 
-[**A Cross-Dataset Study for Text-based 3D Human Motion Retrieval**](https://arxiv.org/abs/2405.16909).
+[**A Cross-Dataset Study for Text-based 3D Human Motion Retrieval**](https://arxiv.org/abs/2405.16909)
 
 </div>
 
@@ -146,12 +146,14 @@ python train.py --config-name=train_with_augmentation data=$DATASET
 ```
 
 <details><summary>Details</summary>
-Relevant parameters you can modify in addition to the one in TMR are the text augmentation picking probabilities detailed in the paper:  
+Relevant parameters you can modify in addition to the ones in TMR are the text augmentation picking probabilities detailed in the paper:  
 **Example**
 ```bash
 python train.py --config-name=train_with_augmentation data=humanml3d data.paraphrase_prob=0.2 data.summary_prob=0.2 data.averaging_prob=0.3 run_dir=outputs/tmr_humanml3d_w_textAugmentation_0.2_0.2_0.3
 ```
+</details>
 
+<details><summary>Extracting weights</summary>
 After training, run the following command, to extract the weights from the checkpoint:
 
 ```bash
@@ -164,24 +166,12 @@ This process makes loading models faster, it does not depends on the file struct
 </details>
 
 
-## [TO BE CONTINUED]
-
-
 ## Pretrained models :dvd:
 
-```bash
-bash prepare/download_pretrain_models.sh
-```
+You can find the different models used in the paper here: 
+[pre-trained models](https://drive.google.com/drive/u/1/folders/1otB-B4m4okpD_0crGMcpg0hOsSRYH45t)
 
-This will put pretrained models in the ``models`` folder.
-Currently, there are:
-- TMR trained on HumanML3D with Guo et al. humanml3d features ``models/tmr_humanml3d_guoh3dfeats``
-- TMR trained on KIT-ML with Guo et al. humanml3d features ``models/tmr_kitml_guoh3dfeats``
-
-Not that KIT-ML is used with the Guo et al. ``humanml3d`` features (it is not a mistake). The motions come from AMASS and are converted (I am not using the MMM joints from the original KIT-ML).
-This makes the two models works in the same motion space.
-
-More models may be available later on.
+## [TO BE CONTINUED]
 
 ## Evaluation :bar_chart:
 
