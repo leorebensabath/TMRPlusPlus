@@ -122,50 +122,50 @@ python -m prepare.combine_datasets datasets=["humanml3d","kitml"] test_sets=["ba
 
 Then run the ''python -m prepare.text_embeddings'' command with or without text augmentations on your new dataset combination. 
 
-Example:
-```
+**Example:**
+```bash
 python -m prepare.text_embeddings --config-name=text_embeddings_with_augmentation data=humanml3d_kitml
 ```
 </details>
 
-## [TO BE CONTINUED]
-
 ## Training :rocket:
 
+### Training with a combination of datasets
+
+To train with a combination of datasets without any text augmentation, run the same command as in TMR with the relevant dataset name:
+
+**Example:**
 ```bash
-python train.py [OPTIONS]
+python train.py data=humanml3d_kitml
+```
+
+### Training with text augmentation
+
+```bash
+python train.py --config-name=train_with_augmentation data=$DATASET
 ```
 
 <details><summary>Details</summary>
-&emsp;
-
-By default, it will train TMR on HumanML3D and store the folder in ``outputs/tmr_humanml3d_guoh3dfeats`` which I will call ``RUN_DIR``.
-The other options are:
-
-#### Models:
-- ``model=tmr``: TMR (by default)
-- ``model=temos``: TEMOS
-
-#### Datasets:
-- ``data=humanml3d``: HumanML3D (by default)
-- ``data=kitml``: KIT-ML
-- ``data=babel``: BABEL
-
-</details>
-
-<details><summary>Extracting weights</summary>
-&emsp;
+Relevant parameters you can modify in addition to the one in TMR are the text augmentation picking probabilities detailed in the paper:  
+**Example**
+```bash
+python train.py --config-name=train_with_augmentation data=humanml3d data.paraphrase_prob=0.2 data.summary_prob=0.2 data.averaging_prob=0.3 run_dir=outputs/tmr_humanml3d_w_textAugmentation_0.2_0.2_0.3
+```
 
 After training, run the following command, to extract the weights from the checkpoint:
 
 ```bash
-python extract.py run_dir=RUN_DIR
+python extract.py run_dir=$RUN_DIR
 ```
 
 It will take the last checkpoint by default. This should create the folder ``RUN_DIR/last_weights`` and populate it with the files: ``motion_decoder.pt``, ``motion_encoder.pt`` and ``text_encoder.pt``.
 This process makes loading models faster, it does not depends on the file structure anymore, and each module can be loaded independently. This is already done for pretrained models.
 
 </details>
+
+
+## [TO BE CONTINUED]
+
 
 ## Pretrained models :dvd:
 
