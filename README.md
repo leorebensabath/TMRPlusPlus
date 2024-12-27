@@ -89,6 +89,14 @@ For a given dataset ($DATASET), up to 3 new annotation file have been created:
 - ``dataset/annotations/$DATASET/annotations_all.json``: Includes a concatenation by key id of all the annotations (original and llm generated)
 
 Copy the data in your repo from [here](https://drive.google.com/drive/u/1/folders/1_SpOgtYCZBPAXoVz00Zhyk6tPRObUIiW)
+
+### Compute the text embeddings for the data with text augmentation
+
+Run this command to compute the sentence embeddings and token embeddings for the annotations with text augmentation:
+
+```
+python -m prepare.text_embeddings --config-name=text_embeddings_with_augmentation data=$DATASET
+```
 </details>
 
 <details><summary>Combine datasets</summary>
@@ -97,7 +105,7 @@ Copy the data in your repo from [here](https://drive.google.com/drive/u/1/folder
 To create a combination of any of the datasets, run:
 
 ```bash
-python -m prepare.combine_datasets datasets=$DATASETS test_sets=$TEST_DATSETS split_suffix=$SPLIT_SUFFIX [OPTIONS]
+python -m prepare.combine_datasets datasets=$DATASETS test_sets=$TEST_DATASETS split_suffix=$SPLIT_SUFFIX [OPTIONS]
 ```
 Where:
 - ``datasets``: The list of datasets to combine
@@ -110,6 +118,13 @@ The new dataset will be created inside folder ``datasets/annotations/{dataset1}_
 **Example:**
 ```bash
 python -m prepare.combine_datasets datasets=["humanml3d","kitml"] test_sets=["babel"] split_suffix="_wo_hkb"
+```
+
+Then run the ''python -m prepare.text_embeddings'' command with or without text augmentations on your new dataset combination. 
+
+Example:
+```
+python -m prepare.text_embeddings --config-name=text_embeddings_with_augmentation data=humanml3d_kitml
 ```
 </details>
 
