@@ -1,9 +1,9 @@
 run_dir: outputs/${hydra:runtime.choices.model}_${hydra:runtime.choices.data}_${hydra:runtime.choices.data/motion_loader}
 
 defaults:
-  - data: hml3d_kitml
-  -  data_val: null
   - train
+  - data_val: null
+  - override data: humanml3d_kitml
   - override model: tmr_text_averaging
   - _self_
 
