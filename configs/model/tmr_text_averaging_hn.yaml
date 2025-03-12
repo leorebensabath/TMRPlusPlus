@@ -1,6 +1,8 @@
 defaults:
-  - tmr
+  - tmr_hn
   - _self_
+
+_target_: src.model.tmr_text_averaging.TMRTextAveraging
 
 contrastive_loss:
   _target_: src.model.losses.HN_InfoNCE_with_filtering

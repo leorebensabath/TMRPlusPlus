@@ -53,7 +53,9 @@ class TMR(TEMOS):
         text_encoder: nn.Module,
         motion_decoder: nn.Module,
         vae: bool,
-        contrastive_loss: InfoNCE_with_filtering,
+        contrastive_loss: Optional[InfoNCE_with_filtering] = None,
+        temperature: float = 0.7, # For compatibility with TMR original code
+        threshold_selfsim: float = 0.80, # For compatibility with TMR original code
         fact: Optional[float] = None,
         sample_mean: Optional[bool] = False,
         lmd: Dict = {"recons": 1.0, "latent": 1.0e-5, "kl": 1.0e-5, "contrastive": 0.1},
@@ -74,6 +76,10 @@ class TMR(TEMOS):
 
         # adding the contrastive loss
         self.contrastive_loss_fn = contrastive_loss
+        if self.contrastive_loss_fn is None: # For compatibility with TMR original code
+            self.contrastive_loss_fn = InfoNCE_with_filtering(
+                temperature=temperature, threshold_selfsim=threshold_selfsim
+            )
         self.threshold_selfsim_metrics = threshold_selfsim_metrics
 
         # store validation values to compute retrieval metrics
