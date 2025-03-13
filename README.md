@@ -190,7 +190,7 @@ python retrieval_action_multi_labels.py run_dir=$RUN_DIR data=$DATA
 
 
 It will compute the metrics, show them and save them in this folder ``RUN_DIR/contrastive_metrics_$DATA/``.
-You can change the name of the saving file name using argument ``save_file_name``. 
+You can change the name of the saving file using argument ``save_file_name``. 
 
 
 ## Usage :computer:
