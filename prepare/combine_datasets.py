@@ -79,6 +79,11 @@ def combine_datasets(cfg: DictConfig):
                 d = json.load(f)
             dataset_annotations[dataset] = d
     
+    # Splits creation
+
+    logger.info(f"Creating train split by combining train splits from: {', '.join(train_datasets)}")
+    logger.info(f"Removing from the train splits samples overlapping with test split from: {', '.join(test_datasets)}")
+
     dataset_splits = {}
 
     splits = ["train", "val"]
@@ -142,8 +147,8 @@ def combine_datasets(cfg: DictConfig):
                             if not ((train_end <= test_start) or (test_end <= train_start)):
                                 to_remove[train_dataset][test_dataset][split].append(train_id)
     
-    datasets_curated = {train_dataset: {split: list(dataset_splits[train_dataset][split].keys()) for split in ["train", "val", "test"]} for train_dataset in train_datasets}
-    
+    datasets_curated = {train_dataset: {split: list(dataset_splits[train_dataset][split].keys()) for split in dataset_splits[train_dataset].keys()} for train_dataset in train_datasets}
+
     for train_dataset in train_datasets:
         for test_dataset in set(test_datasets) - set([train_dataset]):
             for split in ["train", "val"]:
@@ -154,16 +159,13 @@ def combine_datasets(cfg: DictConfig):
     splits_folder = os.path.join(annotations_folder_path, combined_dataset_name, "splits")
     os.makedirs(splits_folder, exist_ok=True)
     all_ids = []
-    for split in ["train", "val", "test"]:
+    for split in ["train", "val"]:
         ids = []
         for train_dataset in train_datasets:
             ids += [f'{elt}_{SUFFIX_DICT[train_dataset]}' for elt in datasets_curated[train_dataset][split]]
         all_ids += ids
         ids_str = "\n".join(ids)
-        if split == "test":
-            filename = f"{split}.txt"
-        else:
-            filename = f"{split}{cfg.split_suffix}.txt"
+        filename = f"{split}{cfg.split_suffix}.txt"
         with open(os.path.join(splits_folder, filename), "w") as f:
             f.write(ids_str)
     
