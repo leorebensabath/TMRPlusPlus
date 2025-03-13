@@ -171,15 +171,26 @@ This process makes loading models faster, it does not depends on the file struct
 You can find the different models used in the paper here: 
 [pre-trained models](https://drive.google.com/drive/u/1/folders/1otB-B4m4okpD_0crGMcpg0hOsSRYH45t)
 
-## [TO BE CONTINUED]
 
 ## Evaluation :bar_chart:
 
+###  Motion to text / Text to motion retrieval 
+
 ```bash
-python retrieval.py run_dir=RUN_DIR
+python retrieval.py run_dir=$RUN_DIR data=$DATA
 ```
 
-It will compute the metrics, show them and save them in this folder ``RUN_DIR/contrastive_metrics/``.
+### Action recognition
+
+For action recognition on datasets babel_actions_60 and babel_actions_120, run:
+
+```bash
+python retrieval_action_multi_labels.py run_dir=$RUN_DIR data=$DATA
+```
+
+
+It will compute the metrics, show them and save them in this folder ``RUN_DIR/contrastive_metrics_$DATA/``.
+You can change the name of the saving file name using argument ``save_file_name``. 
 
 
 ## Usage :computer:
@@ -220,23 +231,6 @@ python app.py
 ```
 
 and then open your web browser at the address: ``http://localhost:7860``.
-
-## Localization (WIP)
-
-The code will be available a bit later.
-
-
-### Reimplementation of TEMOS (WIP)
-
-<details><summary>Details and difference</summary>
-&emsp;
-
-[TEMOS code](https://github.com/Mathux/TEMOS) was probably a bit too abstract and some users struggle to understand it. As TMR and TEMOS share a similar architecture, I took the opportunity to rewrite TEMOS in this repo [src/model/temos.py](src/model/temos.py) to make it more user friendly. Note that in this repo, the motion representation is different from the original TEMOS paper (see [DATASETS.md](DATASETS.md) for more details). Another difference is that I precompute the token embeddings (from distilbert) beforehand (as I am not finetunning the distilbert for the final model). This makes the training around x2 faster and it is more memory efficient.
-
-The code and the generations are not fully tested yet, I will update the README with pretrained models and more information later.
-
-</details>
-
 
 ## License :books:
 This code is distributed under an [MIT LICENSE](LICENSE).

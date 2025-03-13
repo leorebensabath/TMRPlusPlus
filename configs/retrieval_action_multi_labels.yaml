@@ -1,5 +1,5 @@
 defaults:
-  - data: humanml3d
+  - data: babel_actions_120
   - defaults
   - _self_
 
