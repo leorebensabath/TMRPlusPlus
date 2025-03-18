@@ -193,7 +193,7 @@ def save_token_embeddings(
 
     # batch of N/10
     nb_tokens = []
-    all_texts_batched = np.array_split(all_texts, 100)
+    all_texts_batched = np.array_split(all_texts, min(len(all_texts), 100))
 
     nb_tokens_so_far = 0
     big_tensor = []
@@ -265,7 +265,7 @@ def save_sent_embeddings(
     all_texts = list(set(all_texts))
 
     # batch of N/10
-    all_texts_batched = np.array_split(all_texts, 100)
+    all_texts_batched = np.array_split(all_texts, min(len(all_texts), 100))
     embeddings = []
     for all_texts_batch in tqdm(all_texts_batched):
         embedding = model(list(all_texts_batch)).cpu()

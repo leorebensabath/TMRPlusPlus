@@ -22,7 +22,7 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
 
     device = model.device
 
-    nsplit = int(np.ceil(len(dataset) / batch_size))
+    nsplit = int(np.ceil(len(keyids) / min(batch_size, len(keyids))))
     with torch.inference_mode():
         all_data = [dataset.load_keyid(keyid) for keyid in keyids]
         all_data_splitted = np.array_split(all_data, nsplit)
@@ -33,7 +33,6 @@ def compute_sim_matrix(model, dataset, keyids, batch_size=256):
         sent_embs = []
         for data in tqdm(all_data_splitted, leave=True):
             batch = collate_text_motion(data, device=device)
-
             # Text is already encoded
             text_x_dict = batch["text_x_dict"]
             motion_x_dict = batch["motion_x_dict"]
